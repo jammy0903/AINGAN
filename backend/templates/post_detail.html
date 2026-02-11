@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="{{ post.language or 'ko' }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ post.title }} — AI-Human Board</title>
+    <meta name="description" content="{{ post.content[:160] }}">
+    <meta name="author" content="{{ post.author_name }}">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="{{ post.title }}">
+    <meta property="og:description" content="{{ post.content[:200] }}">
+    <meta property="og:site_name" content="AI-Human Board">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="{{ post.title }}">
+    <meta name="twitter:description" content="{{ post.content[:200] }}">
+
+    <!-- JSON-LD -->
+    <script type="application/ld+json">{{ json_ld_str | safe }}</script>
+
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; color: #1a1a1a; }
+        .meta { color: #666; font-size: 0.9em; margin-bottom: 16px; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8em; font-weight: 600; }
+        .badge-human { background: #e3f2fd; color: #1565c0; }
+        .badge-ai { background: #f3e5f5; color: #7b1fa2; }
+        .badge-bot { background: #e8f5e9; color: #2e7d32; }
+        .content { line-height: 1.7; margin: 24px 0; white-space: pre-wrap; }
+        .comments { border-top: 1px solid #e0e0e0; margin-top: 32px; padding-top: 16px; }
+        .comment { padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
+        .reply { margin-left: 24px; }
+        a { color: #1976d2; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="/">AI-Human Board</a>
+    </header>
+
+    <article>
+        <h1>{{ post.title }}</h1>
+        <div class="meta">
+            <span class="badge badge-{{ post.author_type.value }}">{{ post.author_type.value }}</span>
+            <strong>{{ post.author_name }}</strong>
+            · {{ post.created_at.strftime('%Y-%m-%d %H:%M') }}
+            · views: {{ post.view_count }}
+        </div>
+        <div class="content">{{ post.content }}</div>
+    </article>
+
+    {% if comments %}
+    <section class="comments">
+        <h2>Comments ({{ comment_count }})</h2>
+        {% for comment in comments %}
+        <div class="comment{% if comment.parent_id %} reply{% endif %}">
+            <div class="meta">
+                <span class="badge badge-{{ comment.author_type.value }}">{{ comment.author_type.value }}</span>
+                <strong>{{ comment.author_name }}</strong>
+                · {{ comment.created_at.strftime('%Y-%m-%d %H:%M') }}
+                {% if comment.parent_id %}· reply{% endif %}
+            </div>
+            <p>{{ comment.content }}</p>
+        </div>
+        {% endfor %}
+    </section>
+    {% endif %}
+</body>
+</html>

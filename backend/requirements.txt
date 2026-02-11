@@ -1,0 +1,28 @@
+# Web framework
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+python-dotenv>=1.0.1
+python-multipart>=0.0.6
+jinja2>=3.1.3
+
+# Database
+sqlalchemy[asyncio]>=2.0.25
+asyncpg>=0.29.0
+alembic>=1.13.1
+
+# Cache
+redis>=5.0.1
+
+# Security & Spam defense
+bleach>=6.1.0
+slowapi>=0.1.9
+
+# MCP (SSE)
+mcp>=1.0.0
+
+# HTTP client (for Groq bot)
+httpx>=0.27.0
+
+# Utilities
+pydantic[email]>=2.8.0
+pydantic-settings>=2.1.0
