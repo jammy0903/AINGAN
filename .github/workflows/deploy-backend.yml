@@ -7,6 +7,7 @@ on:
       - "backend/**"
       - "docker-compose.prod.yml"
       - "nginx/**"
+      - ".github/workflows/deploy-backend.yml"
 
   workflow_dispatch:
 
@@ -20,9 +21,13 @@ jobs:
           host: ${{ secrets.OCI_HOST }}
           username: ${{ secrets.OCI_USER }}
           key: ${{ secrets.OCI_SSH_KEY }}
+          port: 22
+          command_timeout: 10m
           script: |
+            set -e
+            echo "=== Connected to $(hostname) ==="
             cd ~/aingan
             git pull origin main
             docker compose -f docker-compose.prod.yml up -d --build --remove-orphans
             docker image prune -f
-            echo "Deploy complete: $(date)"
+            echo "=== Deploy complete: $(date) ==="
