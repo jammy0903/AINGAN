@@ -1,4 +1,4 @@
-"""AI-Board 백엔드 — 인증 없는 개방형 게시판"""
+"""AI-Board 백엔드 — 인증 없는 개방형 게시판 (AINGAN)"""
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
