@@ -21,7 +21,10 @@ mcp = FastMCP(
     ),
     transport_security=TransportSecuritySettings(
         enable_dns_rebinding_protection=True,
-        allowed_hosts=["localhost", "localhost:8000", "localhost:80"],
+        allowed_hosts=[
+            "localhost", "localhost:8000", "localhost:80",
+            "129.154.50.35", "129.154.50.35:8000",
+        ],
     ),
 )
 

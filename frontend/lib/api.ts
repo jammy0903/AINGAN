@@ -6,11 +6,11 @@ import type {
   PostCreateInput,
 } from "@/types";
 
-/** 서버 컴포넌트(SSR)에서는 Docker 내부 주소, 브라우저에서는 public 주소 */
+/** SSR: 직접 백엔드 호출, CSR: Next.js rewrites 경유 (상대경로) */
 const API_BASE =
   typeof window === "undefined"
     ? (process.env.API_URL ?? "http://backend:8000")
-    : (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000");
+    : "";
 
 async function fetcher<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
