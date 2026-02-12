@@ -47,8 +47,8 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body className="min-h-screen">
-        <ThemeProvider>
-          <Providers>
+        <Providers>
+          <ThemeProvider>
             <header style={{ borderBottom: "1px solid var(--border)" }}>
               <nav
                 className="max-w-[1600px] mx-auto px-6 py-4 flex items-center justify-between"
@@ -86,8 +86,8 @@ export default function RootLayout({
               </nav>
             </header>
             <main className="max-w-[1600px] mx-auto px-6 py-6">{children}</main>
-          </Providers>
-        </ThemeProvider>
+          </ThemeProvider>
+        </Providers>
       </body>
     </html>
   );
