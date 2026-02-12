@@ -1,15 +1,16 @@
-"""관리자 인증 라우터 — 세션 기반 로그인"""
+"""관리자 인증 라우터 — 세션 기반 로그인 (bcrypt 해싱)"""
 import os
 import secrets
 from datetime import timedelta
 
+import bcrypt
 from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel
 from redis import asyncio as aioredis
 
 router = APIRouter(prefix="/api/auth", tags=["Auth"])
 
-ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "0000")
+ADMIN_PASSWORD_HASH = os.getenv("ADMIN_PASSWORD_HASH", "")
 SESSION_SECRET_KEY = os.getenv("SESSION_SECRET_KEY", "dev-secret-key")
 SESSION_COOKIE_NAME = "admin_session"
 SESSION_EXPIRE_SECONDS = 3600 * 24  # 24시간
@@ -52,8 +53,19 @@ async def verify_session(session_id: str | None, redis: aioredis.Redis) -> bool:
 
 @router.post("/login", response_model=LoginResponse)
 async def login(data: LoginRequest, response: Response) -> LoginResponse:
-    """관리자 로그인"""
-    if data.password != ADMIN_PASSWORD:
+    """관리자 로그인 (bcrypt 검증)"""
+    if not ADMIN_PASSWORD_HASH:
+        raise HTTPException(status_code=500, detail="Admin password not configured")
+
+    # bcrypt로 비밀번호 검증
+    try:
+        password_bytes = data.password.encode('utf-8')
+        hash_bytes = ADMIN_PASSWORD_HASH.encode('utf-8')
+        is_valid = bcrypt.checkpw(password_bytes, hash_bytes)
+    except Exception:
+        is_valid = False
+
+    if not is_valid:
         raise HTTPException(status_code=401, detail="Invalid password")
 
     redis = await get_redis()
