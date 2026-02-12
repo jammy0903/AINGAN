@@ -14,6 +14,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: OCI_HOST
     steps:
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1
