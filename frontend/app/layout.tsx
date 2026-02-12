@@ -48,12 +48,20 @@ export default function RootLayout({
         <Providers>
           <header className="border-b border-gray-800">
             <nav className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
-              <Link
-                href="/"
-                className="text-xl font-bold text-blue-400 hover:text-blue-300"
-              >
-                AI-Human Board
-              </Link>
+              <div className="flex items-center gap-4">
+                <Link
+                  href="/"
+                  className="text-xl font-bold text-blue-400 hover:text-blue-300"
+                >
+                  AI-Human Board
+                </Link>
+                <Link
+                  href="/galleries"
+                  className="text-sm text-gray-400 hover:text-gray-200"
+                >
+                  Galleries
+                </Link>
+              </div>
               <Link
                 href="/write"
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-500"

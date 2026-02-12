@@ -1,16 +1,28 @@
-"""SQLAlchemy 모델 — Post, Comment"""
+"""SQLAlchemy 모델 — Gallery, Post, Comment"""
 
 import enum
 from datetime import datetime
 
 from nanoid import generate
-from sqlalchemy import DateTime, Enum, ForeignKey, Index, Integer, String, Text, func
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    func,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from database import Base
 
 _NANOID_ALPHABET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 _NANOID_SIZE = 12
+
+DEFAULT_GALLERY_ID = "DEFAULT00001"
 
 
 def _generate_nanoid() -> str:
@@ -24,17 +36,48 @@ class AuthorType(str, enum.Enum):
     BOT = "bot"
 
 
+class Gallery(Base):
+    """갤러리 모델 — 디시인사이드 스타일"""
+
+    __tablename__ = "galleries"
+
+    id: Mapped[str] = mapped_column(String(12), primary_key=True, default=_generate_nanoid)
+    slug: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    creator_name: Mapped[str] = mapped_column(String(50), nullable=False)
+    creator_type: Mapped[AuthorType] = mapped_column(
+        Enum(AuthorType, name="author_type_enum", create_type=False),
+        nullable=False,
+    )
+    post_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    is_default: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    posts: Mapped[list["Post"]] = relationship(back_populates="gallery")
+
+    __table_args__ = (
+        Index("ix_galleries_slug", "slug"),
+        Index("ix_galleries_created_at", "created_at"),
+    )
+
+
 class Post(Base):
     """게시글 모델"""
 
     __tablename__ = "posts"
 
     id: Mapped[str] = mapped_column(String(12), primary_key=True, default=_generate_nanoid)
+    gallery_id: Mapped[str] = mapped_column(
+        String(12), ForeignKey("galleries.id"), nullable=False, default=DEFAULT_GALLERY_ID
+    )
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     author_name: Mapped[str] = mapped_column(String(50), nullable=False, default="ㅇㅇ")
     author_type: Mapped[AuthorType] = mapped_column(
-        Enum(AuthorType, name="author_type_enum"),
+        Enum(AuthorType, name="author_type_enum", create_type=False),
         nullable=False,
         default=AuthorType.HUMAN,
     )
@@ -49,6 +92,7 @@ class Post(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
+    gallery: Mapped["Gallery"] = relationship(back_populates="posts")
     comments: Mapped[list["Comment"]] = relationship(
         back_populates="post", cascade="all, delete-orphan"
     )
@@ -56,6 +100,7 @@ class Post(Base):
     __table_args__ = (
         Index("ix_posts_created_at", "created_at"),
         Index("ix_posts_author_type", "author_type"),
+        Index("ix_posts_gallery_id", "gallery_id"),
     )
 
 

@@ -10,7 +10,7 @@ from sqlalchemy.orm import selectinload
 from database import get_db
 
 limiter = Limiter(key_func=get_remote_address)
-from models import Comment, Post
+from models import Comment, Gallery, Post
 from schemas import PaginatedPosts, PostCreate, PostListResponse, PostResponse, PostUpdate
 from services.security import (
     get_client_ip,
@@ -26,7 +26,7 @@ router = APIRouter(prefix="/api/posts", tags=["Posts"])
     "",
     summary="List all posts",
     description="Retrieve a paginated list of posts, ordered by newest first. "
-                "Each item includes comment_count. "
+                "Each item includes comment_count and gallery info. "
                 "No authentication required.",
     response_model=PaginatedPosts,
 )
@@ -51,9 +51,12 @@ async def list_posts(
             Post.view_count,
             Post.created_at,
             func.count(Comment.id).label("comment_count"),
+            Gallery.slug.label("gallery_slug"),
+            Gallery.name.label("gallery_name"),
         )
+        .join(Gallery, Gallery.id == Post.gallery_id)
         .outerjoin(Comment, Comment.post_id == Post.id)
-        .group_by(Post.id)
+        .group_by(Post.id, Gallery.slug, Gallery.name)
         .order_by(Post.created_at.desc())
         .offset(offset)
         .limit(size)
@@ -69,6 +72,8 @@ async def list_posts(
             language=r.language,
             view_count=r.view_count,
             comment_count=r.comment_count,
+            gallery_slug=r.gallery_slug,
+            gallery_name=r.gallery_name,
             created_at=r.created_at,
         )
         for r in rows
@@ -109,10 +114,13 @@ async def search_posts(
             Post.view_count,
             Post.created_at,
             func.count(Comment.id).label("comment_count"),
+            Gallery.slug.label("gallery_slug"),
+            Gallery.name.label("gallery_name"),
         )
+        .join(Gallery, Gallery.id == Post.gallery_id)
         .outerjoin(Comment, Comment.post_id == Post.id)
         .where(where_clause)
-        .group_by(Post.id)
+        .group_by(Post.id, Gallery.slug, Gallery.name)
         .order_by(Post.created_at.desc())
         .offset(offset)
         .limit(size)
@@ -128,6 +136,8 @@ async def search_posts(
             language=r.language,
             view_count=r.view_count,
             comment_count=r.comment_count,
+            gallery_slug=r.gallery_slug,
+            gallery_name=r.gallery_name,
             created_at=r.created_at,
         )
         for r in rows
@@ -150,7 +160,7 @@ async def get_post(
     """게시글 상세 조회 (조회수 +1)"""
     stmt = (
         select(Post)
-        .options(selectinload(Post.comments))
+        .options(selectinload(Post.comments), selectinload(Post.gallery))
         .where(Post.id == post_id)
     )
     post = (await db.execute(stmt)).scalar_one_or_none()
@@ -159,8 +169,21 @@ async def get_post(
 
     post.view_count += 1
     await db.commit()
-    await db.refresh(post)
-    return post
+    await db.refresh(post, ["gallery"])
+
+    return PostResponse(
+        id=post.id,
+        title=post.title,
+        content=post.content,
+        author_name=post.author_name,
+        author_type=post.author_type,
+        language=post.language,
+        view_count=post.view_count,
+        gallery_slug=post.gallery.slug if post.gallery else "",
+        gallery_name=post.gallery.name if post.gallery else "",
+        created_at=post.created_at,
+        updated_at=post.updated_at,
+    )
 
 
 @router.post(
@@ -185,8 +208,17 @@ async def create_post(
         request, data, db
     )
 
+    # gallery_slug → gallery_id 변환
+    gallery_slug = data.gallery_slug or "free-board"
+    gallery = (
+        await db.execute(select(Gallery).where(Gallery.slug == gallery_slug))
+    ).scalar_one_or_none()
+    if not gallery:
+        raise HTTPException(status_code=404, detail=f"Gallery '{gallery_slug}' not found.")
+
     ip = get_client_ip(request)
     post = Post(
+        gallery_id=gallery.id,
         title=title,
         content=content,
         author_name=author_name,
@@ -196,9 +228,23 @@ async def create_post(
         user_agent=request.headers.get("User-Agent", "")[:300],
     )
     db.add(post)
+    gallery.post_count += 1
     await db.commit()
     await db.refresh(post)
-    return post
+
+    return PostResponse(
+        id=post.id,
+        title=post.title,
+        content=post.content,
+        author_name=post.author_name,
+        author_type=post.author_type,
+        language=post.language,
+        view_count=post.view_count,
+        gallery_slug=gallery.slug,
+        gallery_name=gallery.name,
+        created_at=post.created_at,
+        updated_at=post.updated_at,
+    )
 
 
 @router.put(
@@ -248,7 +294,9 @@ async def delete_post(
     db: AsyncSession = Depends(get_db),
 ) -> None:
     """게시글 삭제 (IP 해시로 본인 확인)"""
-    post = (await db.execute(select(Post).where(Post.id == post_id))).scalar_one_or_none()
+    post = (
+        await db.execute(select(Post).options(selectinload(Post.gallery)).where(Post.id == post_id))
+    ).scalar_one_or_none()
     if not post:
         raise HTTPException(status_code=404, detail="Post not found.")
 
@@ -256,5 +304,7 @@ async def delete_post(
     if post.ip_hash and post.ip_hash != ip_hashed:
         raise HTTPException(status_code=403, detail="Not the original author.")
 
+    if post.gallery:
+        post.gallery.post_count = max(0, post.gallery.post_count - 1)
     await db.delete(post)
     await db.commit()

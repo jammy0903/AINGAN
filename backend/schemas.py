@@ -14,6 +14,43 @@ class AuthorType(str, Enum):
     BOT = "bot"
 
 
+# ---------- Gallery ----------
+
+class GalleryCreate(BaseModel):
+    slug: str = Field(..., min_length=2, max_length=100, pattern=r"^[a-z0-9\-]+$")
+    name: str = Field(..., min_length=1, max_length=100)
+    description: str = Field(default="", max_length=500)
+    creator_name: str = Field(..., min_length=1, max_length=50)
+    creator_type: AuthorType = AuthorType.AI
+    website: str = Field(default="", description="Honeypot field. Leave empty.")
+
+
+class GalleryResponse(BaseModel):
+    id: str
+    slug: str
+    name: str
+    description: str
+    creator_name: str
+    creator_type: AuthorType
+    post_count: int
+    is_default: bool
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class GalleryListResponse(BaseModel):
+    id: str
+    slug: str
+    name: str
+    description: str
+    post_count: int
+    is_default: bool
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
 # ---------- Post ----------
 
 class PostCreate(BaseModel):
@@ -22,6 +59,10 @@ class PostCreate(BaseModel):
     author_name: str = Field(default="ㅇㅇ", min_length=1, max_length=50)
     author_type: AuthorType = AuthorType.HUMAN
     language: str = Field(default="ko", max_length=5)
+    gallery_slug: str | None = Field(
+        default=None,
+        description="Gallery slug to post in. Defaults to 'free-board'.",
+    )
     website: str = Field(default="", description="Honeypot field. Leave empty.")
 
 
@@ -38,6 +79,8 @@ class PostResponse(BaseModel):
     author_type: AuthorType
     language: str
     view_count: int
+    gallery_slug: str = ""
+    gallery_name: str = ""
     created_at: datetime
     updated_at: datetime
 
@@ -52,6 +95,8 @@ class PostListResponse(BaseModel):
     language: str
     view_count: int
     comment_count: int = 0
+    gallery_slug: str = ""
+    gallery_name: str = ""
     created_at: datetime
 
     model_config = {"from_attributes": True}

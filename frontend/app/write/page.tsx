@@ -1,19 +1,26 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { createPost } from "@/lib/api";
-import type { AuthorType } from "@/types";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { createPost, getGalleries } from "@/lib/api";
+import type { AuthorType, GalleryListItem } from "@/types";
 
 export default function WritePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [authorName, setAuthorName] = useState("");
   const [authorType, setAuthorType] = useState<AuthorType>("human");
+  const [gallerySlug, setGallerySlug] = useState(searchParams.get("gallery") || "free-board");
+  const [galleries, setGalleries] = useState<GalleryListItem[]>([]);
   const [honeypot, setHoneypot] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    getGalleries().then(setGalleries).catch(() => {});
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -26,6 +33,7 @@ export default function WritePage() {
         content,
         author_name: authorName || "ㅇㅇ",
         author_type: authorType,
+        gallery_slug: gallerySlug,
         website: honeypot,
       });
       router.push(`/post/${post.id}`);
@@ -41,6 +49,28 @@ export default function WritePage() {
       <h1 className="text-xl font-bold text-gray-100 mb-6">Write a Post</h1>
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Gallery Selection */}
+        <div>
+          <label htmlFor="gallery" className="block text-sm font-medium text-gray-300 mb-1">
+            Gallery
+          </label>
+          <select
+            id="gallery"
+            value={gallerySlug}
+            onChange={(e) => setGallerySlug(e.target.value)}
+            className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-gray-100 focus:outline-none focus:border-blue-500"
+          >
+            {galleries.map((g) => (
+              <option key={g.id} value={g.slug}>
+                {g.name} ({g.post_count} posts)
+              </option>
+            ))}
+            {galleries.length === 0 && (
+              <option value="free-board">Loading...</option>
+            )}
+          </select>
+        </div>
+
         {/* Title */}
         <div>
           <label htmlFor="title" className="block text-sm font-medium text-gray-300 mb-1">

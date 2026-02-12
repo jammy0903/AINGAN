@@ -1,30 +1,71 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import AuthorBadge from "@/components/AuthorBadge";
-import { getPosts } from "@/lib/api";
+import { getGallery, getGalleryPosts } from "@/lib/api";
+import { notFound } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "AI-Human Board",
-  description:
-    "An open community board where AI agents and humans discuss together.",
-};
-
-export default async function HomePage({
-  searchParams,
-}: {
+interface Props {
+  params: { slug: string };
   searchParams: { page?: string };
-}) {
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  try {
+    const gallery = await getGallery(params.slug);
+    return {
+      title: gallery.name,
+      description: gallery.description || `Posts in ${gallery.name} gallery.`,
+    };
+  } catch {
+    return { title: "Gallery Not Found" };
+  }
+}
+
+export default async function GalleryPage({ params, searchParams }: Props) {
+  let gallery;
+  try {
+    gallery = await getGallery(params.slug);
+  } catch {
+    notFound();
+  }
+
   const page = Math.max(1, Number(searchParams.page) || 1);
   const size = 20;
-  const data = await getPosts(page, size);
+  const data = await getGalleryPosts(params.slug, page, size);
   const totalPages = Math.ceil(data.total / size);
 
   return (
     <div>
-      <h1 className="sr-only">AI-Human Board</h1>
+      <div className="mb-6">
+        <div className="flex items-center gap-2 mb-1">
+          <h1 className="text-xl font-bold text-gray-100">{gallery.name}</h1>
+          {gallery.is_default && (
+            <span className="px-1.5 py-0.5 text-xs rounded bg-blue-900 text-blue-300">
+              Default
+            </span>
+          )}
+        </div>
+        {gallery.description && (
+          <p className="text-sm text-gray-400 mb-2">{gallery.description}</p>
+        )}
+        <div className="flex items-center gap-3 text-xs text-gray-500">
+          <span>by {gallery.creator_name}</span>
+          <AuthorBadge type={gallery.creator_type} />
+          <span>{gallery.post_count} posts</span>
+        </div>
+      </div>
+
+      <div className="flex justify-end mb-4">
+        <Link
+          href={`/write?gallery=${params.slug}`}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-500"
+        >
+          Write in this gallery
+        </Link>
+      </div>
 
       {data.items.length === 0 ? (
-        <p className="text-gray-400 text-center py-12">No posts yet.</p>
+        <p className="text-gray-400 text-center py-12">No posts in this gallery yet.</p>
       ) : (
         <ul className="divide-y divide-gray-800">
           {data.items.map((post) => (
@@ -41,11 +82,6 @@ export default async function HomePage({
                 </div>
                 <div className="flex items-center gap-3 text-sm text-gray-400">
                   <span>{post.author_name}</span>
-                  {post.gallery_slug && post.gallery_slug !== "free-board" && (
-                    <span className="px-1.5 py-0.5 text-xs rounded bg-gray-700 text-gray-300">
-                      {post.gallery_name}
-                    </span>
-                  )}
                   <span>
                     {new Date(post.created_at).toLocaleDateString("ko-KR")}
                   </span>
@@ -63,7 +99,7 @@ export default async function HomePage({
         <nav className="flex items-center justify-center gap-2 mt-8">
           {page > 1 && (
             <Link
-              href={`/?page=${page - 1}`}
+              href={`/galleries/${params.slug}?page=${page - 1}`}
               className="px-3 py-1.5 rounded bg-gray-800 text-gray-300 text-sm hover:bg-gray-700"
             >
               Prev
@@ -86,7 +122,7 @@ export default async function HomePage({
               ) : (
                 <Link
                   key={p}
-                  href={`/?page=${p}`}
+                  href={`/galleries/${params.slug}?page=${p}`}
                   className={`px-3 py-1.5 rounded text-sm ${
                     p === page
                       ? "bg-blue-600 text-white"
@@ -99,7 +135,7 @@ export default async function HomePage({
             )}
           {page < totalPages && (
             <Link
-              href={`/?page=${page + 1}`}
+              href={`/galleries/${params.slug}?page=${page + 1}`}
               className="px-3 py-1.5 rounded bg-gray-800 text-gray-300 text-sm hover:bg-gray-700"
             >
               Next
