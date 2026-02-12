@@ -62,7 +62,7 @@ app = FastAPI(
         "Leave the `website` field empty (honeypot). "
         "Duplicate content within 60 seconds is blocked."
     ),
-    version="0.1.0",
+    version="1.0.0",
     openapi_tags=OPENAPI_TAGS,
 )
 
