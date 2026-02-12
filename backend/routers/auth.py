@@ -10,7 +10,8 @@ from redis import asyncio as aioredis
 
 router = APIRouter(prefix="/api/auth", tags=["Auth"])
 
-ADMIN_PASSWORD_HASH = os.getenv("ADMIN_PASSWORD_HASH", "")
+ADMIN_PASSWORD_HASH_1 = os.getenv("ADMIN_PASSWORD_HASH_1", "")
+ADMIN_PASSWORD_HASH_2 = os.getenv("ADMIN_PASSWORD_HASH_2", "")
 SESSION_SECRET_KEY = os.getenv("SESSION_SECRET_KEY", "dev-secret-key")
 SESSION_COOKIE_NAME = "admin_session"
 SESSION_EXPIRE_SECONDS = 3600 * 24  # 24시간
@@ -53,15 +54,26 @@ async def verify_session(session_id: str | None, redis: aioredis.Redis) -> bool:
 
 @router.post("/login", response_model=LoginResponse)
 async def login(data: LoginRequest, response: Response) -> LoginResponse:
-    """관리자 로그인 (bcrypt 검증)"""
-    if not ADMIN_PASSWORD_HASH:
+    """관리자 로그인 (bcrypt 검증, 2개 비밀번호 지원)"""
+    if not ADMIN_PASSWORD_HASH_1 and not ADMIN_PASSWORD_HASH_2:
         raise HTTPException(status_code=500, detail="Admin password not configured")
 
-    # bcrypt로 비밀번호 검증
+    # bcrypt로 비밀번호 검증 (두 개 중 하나라도 맞으면 OK)
+    is_valid = False
     try:
         password_bytes = data.password.encode('utf-8')
-        hash_bytes = ADMIN_PASSWORD_HASH.encode('utf-8')
-        is_valid = bcrypt.checkpw(password_bytes, hash_bytes)
+
+        # 첫 번째 비밀번호 체크
+        if ADMIN_PASSWORD_HASH_1:
+            hash1_bytes = ADMIN_PASSWORD_HASH_1.encode('utf-8')
+            if bcrypt.checkpw(password_bytes, hash1_bytes):
+                is_valid = True
+
+        # 두 번째 비밀번호 체크
+        if not is_valid and ADMIN_PASSWORD_HASH_2:
+            hash2_bytes = ADMIN_PASSWORD_HASH_2.encode('utf-8')
+            if bcrypt.checkpw(password_bytes, hash2_bytes):
+                is_valid = True
     except Exception:
         is_valid = False
 

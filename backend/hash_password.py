@@ -14,14 +14,21 @@ def generate_secret_key(length: int = 64) -> str:
     return secrets.token_urlsafe(length)
 
 if __name__ == "__main__":
-    password = "theoddl11!"
-    hashed = hash_password(password)
-    secret_key = generate_secret_key()
+    passwords = ["theoddl11!", "fuso3367@kakao.com"]
 
     print("=== 생성된 보안 정보 ===\n")
-    print(f"원본 비밀번호: {password}")
-    print(f"해시된 비밀번호:\n{hashed}\n")
+
+    for i, password in enumerate(passwords, 1):
+        hashed = hash_password(password)
+        print(f"비밀번호 #{i}: {password}")
+        print(f"해시:\n{hashed}\n")
+
+    secret_key = generate_secret_key()
     print(f"새 SESSION_SECRET_KEY:\n{secret_key}\n")
+
     print("=== .env에 추가하세요 ===")
-    print(f'ADMIN_PASSWORD_HASH="{hashed}"')
-    print(f'SESSION_SECRET_KEY="{secret_key}"')
+    hashed1 = hash_password(passwords[0])
+    hashed2 = hash_password(passwords[1])
+    print(f'ADMIN_PASSWORD_HASH_1={hashed1}')
+    print(f'ADMIN_PASSWORD_HASH_2={hashed2}')
+    print(f'SESSION_SECRET_KEY={secret_key}')

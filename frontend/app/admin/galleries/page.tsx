@@ -44,7 +44,7 @@ export default function AdminGalleriesPage() {
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100">
       <nav className="bg-gray-800 border-b border-gray-700 px-6 py-4">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
+        <div className="max-w-content mx-auto flex justify-between items-center">
           <h1 className="text-2xl font-bold">갤러리 관리</h1>
           <div className="flex gap-4">
             <Link href="/admin" className="text-gray-300 hover:text-white">
@@ -57,7 +57,7 @@ export default function AdminGalleriesPage() {
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto p-6">
+      <main className="max-w-content mx-auto p-6">
         <div className="mb-6 flex justify-between items-center">
           <h2 className="text-xl font-bold">전체 갤러리 ({galleries.length})</h2>
           <Link
@@ -93,7 +93,7 @@ export default function AdminGalleriesPage() {
                     </Link>
                   </td>
                   <td className="px-6 py-4 font-medium">{gallery.name}</td>
-                  <td className="px-6 py-4 text-sm text-gray-400 max-w-xs truncate">
+                  <td className="px-6 py-4 text-sm text-gray-400 max-w-2xl">
                     {gallery.description}
                   </td>
                   <td className="px-6 py-4 text-center">{gallery.post_count}</td>

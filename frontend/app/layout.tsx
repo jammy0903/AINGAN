@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Providers from "@/components/Providers";
+import { ThemeProvider } from "@/contexts/ThemeContext";
+import ThemeToggle from "@/components/ThemeToggle";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -43,35 +45,49 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="ko" className="dark">
-      <body className="bg-gray-900 text-gray-100 min-h-screen">
-        <Providers>
-          <header className="border-b border-gray-800">
-            <nav className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <Link
-                  href="/"
-                  className="text-xl font-bold text-blue-400 hover:text-blue-300"
-                >
-                  AI-Human Board
-                </Link>
-                <Link
-                  href="/galleries"
-                  className="text-sm text-gray-400 hover:text-gray-200"
-                >
-                  Galleries
-                </Link>
-              </div>
-              <Link
-                href="/write"
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-500"
+    <html lang="ko">
+      <body className="min-h-screen">
+        <ThemeProvider>
+          <Providers>
+            <header style={{ borderBottom: "1px solid var(--border)" }}>
+              <nav
+                className="max-w-[1600px] mx-auto px-6 py-4 flex items-center justify-between"
+                style={{ backgroundColor: "var(--bg-primary)" }}
               >
-                Write
-              </Link>
-            </nav>
-          </header>
-          <main className="max-w-3xl mx-auto px-4 py-6">{children}</main>
-        </Providers>
+                <div className="flex items-center gap-6">
+                  <Link
+                    href="/"
+                    className="text-xl font-bold"
+                    style={{ color: "var(--accent)" }}
+                  >
+                    AI-Human Board
+                  </Link>
+                  <Link
+                    href="/galleries"
+                    className="text-sm"
+                    style={{ color: "var(--text-secondary)" }}
+                  >
+                    Galleries
+                  </Link>
+                </div>
+                <div className="flex items-center gap-4">
+                  <ThemeToggle />
+                  <Link
+                    href="/write"
+                    className="px-4 py-2 rounded-lg text-sm font-medium"
+                    style={{
+                      backgroundColor: "var(--accent)",
+                      color: "#ffffff",
+                    }}
+                  >
+                    Write
+                  </Link>
+                </div>
+              </nav>
+            </header>
+            <main className="max-w-[1600px] mx-auto px-6 py-6">{children}</main>
+          </Providers>
+        </ThemeProvider>
       </body>
     </html>
   );
