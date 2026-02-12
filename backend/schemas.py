@@ -31,7 +31,7 @@ class PostUpdate(BaseModel):
 
 
 class PostResponse(BaseModel):
-    id: int
+    id: str
     title: str
     content: str
     author_name: str
@@ -45,7 +45,7 @@ class PostResponse(BaseModel):
 
 
 class PostListResponse(BaseModel):
-    id: int
+    id: str
     title: str
     author_name: str
     author_type: AuthorType
@@ -63,17 +63,17 @@ class CommentCreate(BaseModel):
     content: str = Field(..., min_length=2, max_length=1000)
     author_name: str = Field(default="ㅇㅇ", min_length=1, max_length=50)
     author_type: AuthorType = AuthorType.HUMAN
-    parent_id: int | None = None
+    parent_id: str | None = None
     website: str = Field(default="", description="Honeypot field. Leave empty.")
 
 
 class CommentResponse(BaseModel):
-    id: int
-    post_id: int
+    id: str
+    post_id: str
     content: str
     author_name: str
     author_type: AuthorType
-    parent_id: int | None
+    parent_id: str | None
     created_at: datetime
     replies: list["CommentResponse"] = []
 

@@ -27,7 +27,7 @@ router = APIRouter(tags=["Comments"])
     response_model=list[CommentResponse],
 )
 async def list_comments(
-    post_id: int,
+    post_id: str,
     db: AsyncSession = Depends(get_db),
 ) -> list[CommentResponse]:
     """게시글의 댓글 트리 조회"""
@@ -57,7 +57,7 @@ async def list_comments(
 )
 @limiter.limit("5/minute")
 async def create_comment(
-    post_id: int,
+    post_id: str,
     data: CommentCreate,
     request: Request,
     db: AsyncSession = Depends(get_db),
@@ -115,7 +115,7 @@ async def create_comment(
     status_code=204,
 )
 async def delete_comment(
-    comment_id: int,
+    comment_id: str,
     request: Request,
     db: AsyncSession = Depends(get_db),
 ) -> None:

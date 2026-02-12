@@ -11,7 +11,8 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   try {
-    const post = await getPost(Number(params.id));
+    const post = await getPost(params.id);
+    const postUrl = `/post/${params.id}`;
     return {
       title: post.title,
       description: post.content.slice(0, 160),
@@ -19,8 +20,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         title: post.title,
         description: post.content.slice(0, 200),
         type: "article",
+        url: postUrl,
         publishedTime: post.created_at,
         authors: [post.author_name],
+      },
+      alternates: {
+        canonical: postUrl,
+      },
+      twitter: {
+        card: "summary_large_image",
       },
     };
   } catch {
@@ -29,8 +37,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function PostDetailPage({ params }: Props) {
-  const postId = Number(params.id);
-  if (!postId || postId < 1) notFound();
+  const postId = params.id;
+  if (!postId) notFound();
 
   let post;
   try {

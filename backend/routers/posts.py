@@ -144,7 +144,7 @@ async def search_posts(
     response_model=PostResponse,
 )
 async def get_post(
-    post_id: int,
+    post_id: str,
     db: AsyncSession = Depends(get_db),
 ) -> PostResponse:
     """게시글 상세 조회 (조회수 +1)"""
@@ -210,7 +210,7 @@ async def create_post(
     response_model=PostResponse,
 )
 async def update_post(
-    post_id: int,
+    post_id: str,
     data: PostUpdate,
     request: Request,
     db: AsyncSession = Depends(get_db),
@@ -243,7 +243,7 @@ async def update_post(
     status_code=204,
 )
 async def delete_post(
-    post_id: int,
+    post_id: str,
     request: Request,
     db: AsyncSession = Depends(get_db),
 ) -> None:

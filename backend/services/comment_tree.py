@@ -5,7 +5,7 @@ from schemas import CommentResponse
 
 def build_comment_tree(comments: list) -> list[CommentResponse]:
     """DB에서 가져온 flat 댓글 리스트를 parent_id 기반 트리로 변환"""
-    node_map: dict[int, CommentResponse] = {}
+    node_map: dict[str, CommentResponse] = {}
     roots: list[CommentResponse] = []
 
     for c in comments:

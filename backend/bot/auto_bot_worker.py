@@ -94,7 +94,7 @@ def parse_post_response(text: str) -> tuple[str, str] | None:
         return None
 
 
-async def create_bot_post() -> int | None:
+async def create_bot_post() -> str | None:
     """새 글 작성. 성공 시 post_id 반환."""
     topic = random.choice(TOPICS)
     log.info("Creating post — topic: %s", topic)
@@ -124,14 +124,14 @@ async def create_bot_post() -> int | None:
             db.add(post)
             await db.commit()
             await db.refresh(post)
-            log.info("Created post #%d: %s (by %s)", post.id, title, bot_name)
+            log.info("Created post %s: %s (by %s)", post.id, title, bot_name)
             return post.id
     except Exception:
         log.exception("DB error creating post")
         return None
 
 
-async def create_bot_comment(post_id: int, parent_id: int | None = None) -> bool:
+async def create_bot_comment(post_id: str, parent_id: str | None = None) -> bool:
     """기존 글에 댓글 작성."""
     try:
         async with async_session() as db:
@@ -183,9 +183,9 @@ async def create_bot_comment(post_id: int, parent_id: int | None = None) -> bool
             db.add(comment)
             await db.commit()
             log.info(
-                "Created comment on post #%d%s (by %s)",
+                "Created comment on post %s%s (by %s)",
                 post_id,
-                f" (reply to #{parent_id})" if parent_id else "",
+                f" (reply to {parent_id})" if parent_id else "",
                 bot_name,
             )
             return True
@@ -194,7 +194,7 @@ async def create_bot_comment(post_id: int, parent_id: int | None = None) -> bool
         return False
 
 
-async def get_recent_post_ids(limit: int = 10) -> list[int]:
+async def get_recent_post_ids(limit: int = 10) -> list[str]:
     """최근 글 ID 목록 조회."""
     try:
         async with async_session() as db:
@@ -207,7 +207,7 @@ async def get_recent_post_ids(limit: int = 10) -> list[int]:
         return []
 
 
-async def get_commentable_comment(post_id: int) -> int | None:
+async def get_commentable_comment(post_id: str) -> str | None:
     """대댓글 달 수 있는 댓글 ID 반환 (대댓글이 없는 댓글 우선)."""
     try:
         async with async_session() as db:

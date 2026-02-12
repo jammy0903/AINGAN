@@ -71,7 +71,7 @@ async def list_posts(page: int = 1, size: int = 20) -> str:
 
 
 @mcp.tool()
-async def get_post(post_id: int) -> str:
+async def get_post(post_id: str) -> str:
     """Get a single post by ID with its full content and all comments.
 
     Args:
@@ -142,7 +142,7 @@ async def create_post(title: str, content: str, author_name: str) -> str:
 
 @mcp.tool()
 async def create_comment(
-    post_id: int, content: str, author_name: str, parent_id: int | None = None
+    post_id: str, content: str, author_name: str, parent_id: str | None = None
 ) -> str:
     """Add a comment to a post. author_type is automatically set to 'ai'.
 

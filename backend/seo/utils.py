@@ -10,14 +10,15 @@ def get_base_url() -> str:
     return os.getenv("SITE_URL", "http://localhost:8000")
 
 
-def generate_sitemap_xml(posts: list[Post]) -> str:
+def generate_sitemap_xml(posts: list[Post], frontend_url: str | None = None) -> str:
     """동적 sitemap.xml 생성. 게시글 URL + 정적 페이지 포함."""
     base = get_base_url()
+    front = frontend_url or base
     today = datetime.utcnow().strftime("%Y-%m-%d")
 
     urls = [
         f"""  <url>
-    <loc>{base}/</loc>
+    <loc>{front}/</loc>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>""",
@@ -33,7 +34,7 @@ def generate_sitemap_xml(posts: list[Post]) -> str:
         lastmod = post.updated_at.strftime("%Y-%m-%d") if post.updated_at else today
         urls.append(
             f"""  <url>
-    <loc>{base}/posts/{post.id}</loc>
+    <loc>{front}/post/{post.id}</loc>
     <lastmod>{lastmod}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -48,16 +49,22 @@ def generate_sitemap_xml(posts: list[Post]) -> str:
     )
 
 
-def generate_json_ld(post: Post, comments: list[Comment], comment_count: int) -> dict:
+def generate_json_ld(
+    post: Post,
+    comments: list[Comment],
+    comment_count: int,
+    canonical_url: str | None = None,
+) -> dict:
     """Schema.org DiscussionForumPosting JSON-LD 생성."""
     base = get_base_url()
+    url = canonical_url or f"{base}/posts/{post.id}"
 
     ld = {
         "@context": "https://schema.org",
         "@type": "DiscussionForumPosting",
         "headline": post.title,
         "text": post.content[:500],
-        "url": f"{base}/posts/{post.id}",
+        "url": url,
         "author": {
             "@type": "Person",
             "name": post.author_name,

@@ -3,10 +3,19 @@
 import enum
 from datetime import datetime
 
+from nanoid import generate
 from sqlalchemy import DateTime, Enum, ForeignKey, Index, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from database import Base
+
+_NANOID_ALPHABET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+_NANOID_SIZE = 12
+
+
+def _generate_nanoid() -> str:
+    """URL-safe 12자리 nanoid 생성"""
+    return generate(_NANOID_ALPHABET, _NANOID_SIZE)
 
 
 class AuthorType(str, enum.Enum):
@@ -20,7 +29,7 @@ class Post(Base):
 
     __tablename__ = "posts"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[str] = mapped_column(String(12), primary_key=True, default=_generate_nanoid)
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     author_name: Mapped[str] = mapped_column(String(50), nullable=False, default="ㅇㅇ")
@@ -55,9 +64,9 @@ class Comment(Base):
 
     __tablename__ = "comments"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    post_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("posts.id", ondelete="CASCADE"), nullable=False
+    id: Mapped[str] = mapped_column(String(12), primary_key=True, default=_generate_nanoid)
+    post_id: Mapped[str] = mapped_column(
+        String(12), ForeignKey("posts.id", ondelete="CASCADE"), nullable=False
     )
     content: Mapped[str] = mapped_column(Text, nullable=False)
     author_name: Mapped[str] = mapped_column(String(50), nullable=False, default="ㅇㅇ")
@@ -66,8 +75,8 @@ class Comment(Base):
         nullable=False,
         default=AuthorType.HUMAN,
     )
-    parent_id: Mapped[int | None] = mapped_column(
-        Integer, ForeignKey("comments.id", ondelete="CASCADE")
+    parent_id: Mapped[str | None] = mapped_column(
+        String(12), ForeignKey("comments.id", ondelete="CASCADE")
     )
     ip_hash: Mapped[str | None] = mapped_column(String(64))
     user_agent: Mapped[str | None] = mapped_column(String(300))

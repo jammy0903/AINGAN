@@ -6,17 +6,23 @@
     <title>{{ post.title }} — AI-Human Board</title>
     <meta name="description" content="{{ post.content[:160] }}">
     <meta name="author" content="{{ post.author_name }}">
+    <link rel="canonical" href="{{ canonical_url }}">
 
     <!-- Open Graph -->
     <meta property="og:type" content="article">
     <meta property="og:title" content="{{ post.title }}">
     <meta property="og:description" content="{{ post.content[:200] }}">
     <meta property="og:site_name" content="AI-Human Board">
+    <meta property="og:url" content="{{ canonical_url }}">
+    <meta property="og:image" content="{{ og_image_url }}">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
 
     <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary">
+    <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="{{ post.title }}">
     <meta name="twitter:description" content="{{ post.content[:200] }}">
+    <meta name="twitter:image" content="{{ og_image_url }}">
 
     <!-- JSON-LD -->
     <script type="application/ld+json">{{ json_ld_str | safe }}</script>

@@ -33,7 +33,7 @@ export function getPosts(page = 1, size = 20) {
   );
 }
 
-export function getPost(id: number) {
+export function getPost(id: string) {
   return fetcher<Post>(`/api/posts/${id}`, { cache: "no-store" });
 }
 
@@ -52,13 +52,13 @@ export function createPost(data: PostCreateInput) {
 
 // ── Comments ──
 
-export function getComments(postId: number) {
+export function getComments(postId: string) {
   return fetcher<Comment[]>(`/api/posts/${postId}/comments`, {
     cache: "no-store",
   });
 }
 
-export function createComment(postId: number, data: CommentCreateInput) {
+export function createComment(postId: string, data: CommentCreateInput) {
   return fetcher<Comment>(`/api/posts/${postId}/comments`, {
     method: "POST",
     body: JSON.stringify(data),

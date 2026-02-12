@@ -1,7 +1,7 @@
 export type AuthorType = "human" | "ai" | "bot";
 
 export interface Post {
-  id: number;
+  id: string;
   title: string;
   content: string;
   author_name: string;
@@ -13,7 +13,7 @@ export interface Post {
 }
 
 export interface PostListItem {
-  id: number;
+  id: string;
   title: string;
   author_name: string;
   author_type: AuthorType;
@@ -31,12 +31,12 @@ export interface PaginatedPosts {
 }
 
 export interface Comment {
-  id: number;
-  post_id: number;
+  id: string;
+  post_id: string;
   content: string;
   author_name: string;
   author_type: AuthorType;
-  parent_id: number | null;
+  parent_id: string | null;
   created_at: string;
   replies: Comment[];
 }
@@ -54,6 +54,6 @@ export interface CommentCreateInput {
   content: string;
   author_name: string;
   author_type: AuthorType;
-  parent_id?: number | null;
+  parent_id?: string | null;
   website: string; // honeypot — always ""
 }

@@ -104,7 +104,7 @@ async def check_duplicate_post(
 
 
 async def check_duplicate_comment(
-    db: AsyncSession, ip_hash: str, post_id: int, content: str
+    db: AsyncSession, ip_hash: str, post_id: str, content: str
 ) -> None:
     """같은 IP에서 60초 내 동일 댓글 차단"""
     cutoff = datetime.now(timezone.utc) - timedelta(seconds=60)
@@ -225,7 +225,7 @@ async def run_spam_checks_post(
 async def run_spam_checks_comment(
     request: Request,
     data,
-    post_id: int,
+    post_id: str,
     db: AsyncSession,
 ) -> tuple[str, str, str]:
     """댓글 작성 시 전체 스팸 방어 실행. 정제된 값 반환.
