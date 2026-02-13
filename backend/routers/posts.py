@@ -3,15 +3,17 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from slowapi import Limiter
 from slowapi.util import get_remote_address
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
 from database import get_db
-
-limiter = Limiter(key_func=get_remote_address)
-from models import Comment, Gallery, Post
-from schemas import PaginatedPosts, PostCreate, PostListResponse, PostResponse, PostUpdate
+from models import Gallery, Post
+from schemas import PaginatedPosts, PostCreate, PostResponse, PostUpdate
+from services.post_service import (
+    fetch_post_list,
+    get_post_with_gallery,
+    search_post_list,
+)
 from services.security import (
     get_client_ip,
     hash_ip,
@@ -19,6 +21,7 @@ from services.security import (
     sanitize_text,
 )
 
+limiter = Limiter(key_func=get_remote_address)
 router = APIRouter(prefix="/api/posts", tags=["Posts"])
 
 
@@ -36,48 +39,7 @@ async def list_posts(
     db: AsyncSession = Depends(get_db),
 ) -> PaginatedPosts:
     """게시글 목록 (페이지네이션)"""
-    offset = (page - 1) * size
-
-    count_stmt = select(func.count(Post.id))
-    total = (await db.execute(count_stmt)).scalar_one()
-
-    stmt = (
-        select(
-            Post.id,
-            Post.title,
-            Post.author_name,
-            Post.author_type,
-            Post.language,
-            Post.view_count,
-            Post.created_at,
-            func.count(Comment.id).label("comment_count"),
-            Gallery.slug.label("gallery_slug"),
-            Gallery.name.label("gallery_name"),
-        )
-        .join(Gallery, Gallery.id == Post.gallery_id)
-        .outerjoin(Comment, Comment.post_id == Post.id)
-        .group_by(Post.id, Gallery.slug, Gallery.name)
-        .order_by(Post.created_at.desc())
-        .offset(offset)
-        .limit(size)
-    )
-    rows = (await db.execute(stmt)).all()
-
-    items = [
-        PostListResponse(
-            id=r.id,
-            title=r.title,
-            author_name=r.author_name,
-            author_type=r.author_type,
-            language=r.language,
-            view_count=r.view_count,
-            comment_count=r.comment_count,
-            gallery_slug=r.gallery_slug,
-            gallery_name=r.gallery_name,
-            created_at=r.created_at,
-        )
-        for r in rows
-    ]
+    items, total = await fetch_post_list(db, page, size)
     return PaginatedPosts(items=items, total=total, page=page, size=size)
 
 
@@ -96,52 +58,7 @@ async def search_posts(
     db: AsyncSession = Depends(get_db),
 ) -> PaginatedPosts:
     """키워드로 게시글 검색"""
-    offset = (page - 1) * size
-    pattern = f"%{q}%"
-
-    where_clause = Post.title.ilike(pattern) | Post.content.ilike(pattern)
-
-    count_stmt = select(func.count(Post.id)).where(where_clause)
-    total = (await db.execute(count_stmt)).scalar_one()
-
-    stmt = (
-        select(
-            Post.id,
-            Post.title,
-            Post.author_name,
-            Post.author_type,
-            Post.language,
-            Post.view_count,
-            Post.created_at,
-            func.count(Comment.id).label("comment_count"),
-            Gallery.slug.label("gallery_slug"),
-            Gallery.name.label("gallery_name"),
-        )
-        .join(Gallery, Gallery.id == Post.gallery_id)
-        .outerjoin(Comment, Comment.post_id == Post.id)
-        .where(where_clause)
-        .group_by(Post.id, Gallery.slug, Gallery.name)
-        .order_by(Post.created_at.desc())
-        .offset(offset)
-        .limit(size)
-    )
-    rows = (await db.execute(stmt)).all()
-
-    items = [
-        PostListResponse(
-            id=r.id,
-            title=r.title,
-            author_name=r.author_name,
-            author_type=r.author_type,
-            language=r.language,
-            view_count=r.view_count,
-            comment_count=r.comment_count,
-            gallery_slug=r.gallery_slug,
-            gallery_name=r.gallery_name,
-            created_at=r.created_at,
-        )
-        for r in rows
-    ]
+    items, total = await search_post_list(db, q, page, size)
     return PaginatedPosts(items=items, total=total, page=page, size=size)
 
 
@@ -158,12 +75,7 @@ async def get_post(
     db: AsyncSession = Depends(get_db),
 ) -> PostResponse:
     """게시글 상세 조회 (조회수 +1)"""
-    stmt = (
-        select(Post)
-        .options(selectinload(Post.comments), selectinload(Post.gallery))
-        .where(Post.id == post_id)
-    )
-    post = (await db.execute(stmt)).scalar_one_or_none()
+    post = await get_post_with_gallery(db, post_id)
     if not post:
         raise HTTPException(status_code=404, detail="Post not found.")
 
