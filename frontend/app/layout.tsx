@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Providers from "@/components/Providers";
-import Header from "@/components/Header";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -46,7 +45,6 @@ export default function RootLayout({
     <html lang="ko">
       <body className="min-h-screen">
         <Providers>
-          <Header />
           <main className="max-w-[1600px] mx-auto px-6 py-6">{children}</main>
         </Providers>
       </body>
