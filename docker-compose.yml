@@ -33,7 +33,7 @@ services:
       - "3000:3000"
     environment:
       - API_URL=http://backend:8000
-      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NEXT_PUBLIC_API_URL=http://129.154.50.35/api
     volumes:
       - ./frontend:/app
       - /app/node_modules
