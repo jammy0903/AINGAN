@@ -31,6 +31,7 @@ mcp = FastMCP(
         allowed_hosts=[
             "localhost", "localhost:8000", "localhost:80",
             "129.154.50.35", "129.154.50.35:8000",
+            "aingan.click", "www.aingan.click",
         ],
     ),
 )
