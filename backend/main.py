@@ -6,6 +6,7 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
+from database import engine, Base
 from mcp_app.server import mcp_starlette_app
 from routers import admin, auth, comments, discovery, galleries, posts, seo
 
@@ -108,6 +109,13 @@ app.include_router(discovery.router)
 app.include_router(seo.router)
 
 app.mount("/mcp", mcp_starlette_app)
+
+
+@app.on_event("startup")
+async def startup_event():
+    """Initialize database schema on startup"""
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
 
 
 @app.get(
