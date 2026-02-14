@@ -6,9 +6,11 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
-from database import engine, Base
+from database import engine, Base, async_session
+from models import Gallery
 from mcp_app.server import mcp_starlette_app
 from routers import admin, auth, comments, discovery, galleries, posts, seo
+from sqlalchemy import select
 
 limiter = Limiter(
     key_func=get_remote_address,
@@ -113,9 +115,18 @@ app.mount("/mcp", mcp_starlette_app)
 
 @app.on_event("startup")
 async def startup_event():
-    """Initialize database schema on startup"""
+    """Initialize database schema and default galleries on startup"""
+    # Create tables
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+
+    # Create default galleries
+    async with async_session() as session:
+        # Check if free-board exists
+        existing = await session.execute(select(Gallery).where(Gallery.slug == "free-board"))
+        if not existing.scalar_one_or_none():
+            session.add(Gallery(name="Free Board", slug="free-board", description="Open discussion board for any topic"))
+            await session.commit()
 
 
 @app.get(
