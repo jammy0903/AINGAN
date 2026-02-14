@@ -12,18 +12,28 @@ export default function WritePage() {
   const [content, setContent] = useState("");
   const [authorName, setAuthorName] = useState("");
   const [authorType, setAuthorType] = useState<AuthorType>("human");
-  const [gallerySlug, setGallerySlug] = useState(searchParams.get("gallery") || "free-board");
+  const [selectedGallery, setSelectedGallery] = useState<GalleryListItem | null>(null);
   const [galleries, setGalleries] = useState<GalleryListItem[]>([]);
   const [honeypot, setHoneypot] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    getGalleries().then(setGalleries).catch(() => {});
-  }, []);
+    getGalleries().then((data) => {
+      setGalleries(data);
+      // If gallery from query param exists, auto-select it
+      const gallerySluFromQuery = searchParams.get("gallery");
+      if (gallerySluFromQuery) {
+        const found = data.find((g) => g.slug === gallerySluFromQuery);
+        if (found) setSelectedGallery(found);
+      }
+    }).catch(() => {});
+  }, [searchParams]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!selectedGallery) return;
+
     setError("");
     setSubmitting(true);
 
@@ -33,7 +43,7 @@ export default function WritePage() {
         content,
         author_name: authorName || "ㅇㅇ",
         author_type: authorType,
-        gallery_slug: gallerySlug,
+        gallery_slug: selectedGallery.slug,
         website: honeypot,
       });
       router.push(`/post/${post.id}`);
@@ -44,33 +54,53 @@ export default function WritePage() {
     }
   }
 
+  // Gallery selection view
+  if (!selectedGallery) {
+    return (
+      <div className="max-w-2xl">
+        <h1 className="text-2xl font-bold text-gray-100 mb-2">Select a Gallery</h1>
+        <p className="text-gray-400 mb-6">Choose a gallery to start writing your post</p>
+
+        {galleries.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-gray-400">Loading galleries...</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {galleries.map((gallery) => (
+              <button
+                key={gallery.id}
+                onClick={() => setSelectedGallery(gallery)}
+                className="p-4 border border-gray-700 rounded-lg hover:border-blue-500 hover:bg-gray-800/50 transition text-left"
+              >
+                <h2 className="font-semibold text-gray-100 mb-1">{gallery.name}</h2>
+                <p className="text-sm text-gray-400 mb-2">{gallery.description}</p>
+                <p className="text-xs text-gray-500">{gallery.post_count} posts</p>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Post writing view
   return (
-    <div>
-      <h1 className="text-xl font-bold text-gray-100 mb-6">Write a Post</h1>
+    <div className="max-w-2xl">
+      {/* Back button + Gallery info */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <button
+            onClick={() => setSelectedGallery(null)}
+            className="text-sm text-blue-400 hover:text-blue-300 mb-2"
+          >
+            ← Change Gallery
+          </button>
+          <h1 className="text-2xl font-bold text-gray-100">Write in {selectedGallery.name}</h1>
+        </div>
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Gallery Selection */}
-        <div>
-          <label htmlFor="gallery" className="block text-sm font-medium text-gray-300 mb-1">
-            Gallery
-          </label>
-          <select
-            id="gallery"
-            value={gallerySlug}
-            onChange={(e) => setGallerySlug(e.target.value)}
-            className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-gray-100 focus:outline-none focus:border-blue-500"
-          >
-            {galleries.map((g) => (
-              <option key={g.id} value={g.slug}>
-                {g.name} ({g.post_count} posts)
-              </option>
-            ))}
-            {galleries.length === 0 && (
-              <option value="free-board">Loading...</option>
-            )}
-          </select>
-        </div>
-
         {/* Title */}
         <div>
           <label htmlFor="title" className="block text-sm font-medium text-gray-300 mb-1">
