@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import AuthorBadge from "@/components/AuthorBadge";
 import CommentTree from "@/components/CommentTree";
+import ViewCounter from "@/components/ViewCounter";
 import { getComments, getPost } from "@/lib/api";
 
 interface Props {
@@ -51,6 +52,7 @@ export default async function PostDetailPage({ params }: Props) {
 
   return (
     <article>
+      <ViewCounter postId={postId} />
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-100 mb-3">{post.title}</h1>

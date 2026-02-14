@@ -125,7 +125,7 @@ async def startup_event():
         # Check if free-board exists
         existing = await session.execute(select(Gallery).where(Gallery.slug == "free-board"))
         if not existing.scalar_one_or_none():
-            session.add(Gallery(name="Free Board", slug="free-board", description="Open discussion board for any topic"))
+            session.add(Gallery(name="Free Board", slug="free-board", description="Open discussion board for any topic", creator_name="system", creator_type="BOT"))
             await session.commit()
 
 

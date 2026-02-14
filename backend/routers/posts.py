@@ -13,7 +13,9 @@ from schemas import PaginatedPosts, PostCreate, PostResponse, PostUpdate
 from services.post_service import (
     fetch_post_list,
     get_post_with_gallery,
+    increment_view_count,
     search_post_list,
+    to_post_response,
 )
 from services.security import (
     get_client_ip,
@@ -67,36 +69,35 @@ async def search_posts(
     "/{post_id}",
     summary="Get a single post with comments",
     description="Retrieve a post by its ID, including all comments. "
-                "Increments view_count by 1 on each request. "
-                "No authentication required.",
+                "No authentication required. "
+                "Call POST /api/posts/{post_id}/view separately to count views.",
     response_model=PostResponse,
 )
 async def get_post(
     post_id: str,
     db: AsyncSession = Depends(get_db),
 ) -> PostResponse:
-    """게시글 상세 조회 (조회수 +1)"""
+    """게시글 상세 조회 (조회수 증가 없음 — 별도 엔드포인트 사용)"""
     post = await get_post_with_gallery(db, post_id)
     if not post:
         raise HTTPException(status_code=404, detail="Post not found.")
+    return to_post_response(post)
 
-    post.view_count += 1
-    await db.commit()
-    await db.refresh(post, ["gallery"])
 
-    return PostResponse(
-        id=post.id,
-        title=post.title,
-        content=post.content,
-        author_name=post.author_name,
-        author_type=post.author_type,
-        language=post.language,
-        view_count=post.view_count,
-        gallery_slug=post.gallery.slug if post.gallery else "",
-        gallery_name=post.gallery.name if post.gallery else "",
-        created_at=post.created_at,
-        updated_at=post.updated_at,
-    )
+@router.post(
+    "/{post_id}/view",
+    summary="Increment view count",
+    description="Increment the view count of a post by 1. "
+                "Call this once when a user views a post. "
+                "Separated from GET to prevent double-counting from SSR.",
+    status_code=204,
+)
+async def record_view(
+    post_id: str,
+    db: AsyncSession = Depends(get_db),
+) -> None:
+    """조회수 +1 (클라이언트에서 1회 호출)"""
+    await increment_view_count(db, post_id)
 
 
 @router.post(
@@ -121,7 +122,6 @@ async def create_post(
         request, data, db
     )
 
-    # gallery_slug → gallery_id 변환
     gallery_slug = data.gallery_slug or "free-board"
     gallery = (
         await db.execute(select(Gallery).where(Gallery.slug == gallery_slug))
@@ -143,21 +143,9 @@ async def create_post(
     db.add(post)
     gallery.post_count += 1
     await db.commit()
-    await db.refresh(post)
 
-    return PostResponse(
-        id=post.id,
-        title=post.title,
-        content=post.content,
-        author_name=post.author_name,
-        author_type=post.author_type,
-        language=post.language,
-        view_count=post.view_count,
-        gallery_slug=gallery.slug,
-        gallery_name=gallery.name,
-        created_at=post.created_at,
-        updated_at=post.updated_at,
-    )
+    post = await get_post_with_gallery(db, post.id)
+    return to_post_response(post)
 
 
 @router.put(
@@ -175,7 +163,7 @@ async def update_post(
     db: AsyncSession = Depends(get_db),
 ) -> PostResponse:
     """게시글 수정 (IP 해시로 본인 확인)"""
-    post = (await db.execute(select(Post).where(Post.id == post_id))).scalar_one_or_none()
+    post = await get_post_with_gallery(db, post_id)
     if not post:
         raise HTTPException(status_code=404, detail="Post not found.")
 
@@ -189,8 +177,8 @@ async def update_post(
         post.content = sanitize_text(data.content)
 
     await db.commit()
-    await db.refresh(post)
-    return post
+    post = await get_post_with_gallery(db, post_id)
+    return to_post_response(post)
 
 
 @router.delete(

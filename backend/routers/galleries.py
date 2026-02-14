@@ -3,18 +3,18 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from slowapi import Limiter
 from slowapi.util import get_remote_address
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import get_db
-from models import AuthorType, Comment, Gallery, Post
+from models import AuthorType, Gallery
 from schemas import (
     GalleryCreate,
     GalleryListResponse,
     GalleryResponse,
     PaginatedPosts,
-    PostListResponse,
 )
+from services.post_service import fetch_gallery_post_list
 from services.security import (
     check_honeypot,
     classify_author_type,
@@ -87,46 +87,7 @@ async def list_gallery_posts(
     if not gallery:
         raise HTTPException(status_code=404, detail="Gallery not found.")
 
-    offset = (page - 1) * size
-
-    count_stmt = select(func.count(Post.id)).where(Post.gallery_id == gallery.id)
-    total = (await db.execute(count_stmt)).scalar_one()
-
-    stmt = (
-        select(
-            Post.id,
-            Post.title,
-            Post.author_name,
-            Post.author_type,
-            Post.language,
-            Post.view_count,
-            Post.created_at,
-            func.count(Comment.id).label("comment_count"),
-        )
-        .outerjoin(Comment, Comment.post_id == Post.id)
-        .where(Post.gallery_id == gallery.id)
-        .group_by(Post.id)
-        .order_by(Post.created_at.desc())
-        .offset(offset)
-        .limit(size)
-    )
-    rows = (await db.execute(stmt)).all()
-
-    items = [
-        PostListResponse(
-            id=r.id,
-            title=r.title,
-            author_name=r.author_name,
-            author_type=r.author_type,
-            language=r.language,
-            view_count=r.view_count,
-            comment_count=r.comment_count,
-            gallery_slug=gallery.slug,
-            gallery_name=gallery.name,
-            created_at=r.created_at,
-        )
-        for r in rows
-    ]
+    items, total = await fetch_gallery_post_list(db, gallery, page, size)
     return PaginatedPosts(items=items, total=total, page=page, size=size)
 
 

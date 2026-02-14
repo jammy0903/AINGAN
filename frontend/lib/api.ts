@@ -81,6 +81,10 @@ export function createPost(data: PostCreateInput) {
   });
 }
 
+export async function recordView(postId: string) {
+  await fetch(`${API_BASE}/api/posts/${postId}/view`, { method: "POST" });
+}
+
 // ── Comments ──
 
 export function getComments(postId: string) {
